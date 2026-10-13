@@ -1,0 +1,97 @@
+name: Update rankings
+
+on:
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: "Only scrape the first N battle pages (blank = all, ~1 hour first time)"
+        required: false
+        default: ""
+  schedule:
+    - cron: "17 6 * * 1"        # every Monday 06:17 UTC
+  push:
+    branches: [main]
+    paths: ["site/*.html", "site/*.css", "site/*.js"]   # redeploy the page after front-end edits
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: rankings
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    outputs:
+      publish: ${{ steps.check.outputs.ok }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        if: github.event_name != 'push'
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        if: github.event_name != 'push'
+        run: pip install -r requirements.txt
+
+      - name: Restore Wikipedia cache
+        if: github.event_name != 'push'
+        uses: actions/cache/restore@v4
+        with:
+          path: data/cache
+          key: wiki-cache-${{ github.run_id }}
+          restore-keys: wiki-cache-
+
+      - name: Scrape Wikipedia and score generals
+        if: github.event_name != 'push'
+        run: |
+          ARGS=""
+          if [ -n "${{ github.event.inputs.limit }}" ]; then ARGS="--limit ${{ github.event.inputs.limit }}"; fi
+          python -m scraper.build $ARGS
+
+      - name: Save Wikipedia cache
+        if: always() && github.event_name != 'push'
+        uses: actions/cache/save@v4
+        with:
+          path: data/cache
+          key: wiki-cache-${{ github.run_id }}
+
+      - name: Commit updated data
+        if: github.event_name != 'push'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add site/data data/battles.csv data/generals.csv
+          git diff --cached --quiet || git commit -m "Update rankings $(date -u +%Y-%m-%d)"
+          git push
+
+      - name: Check there is data to publish
+        id: check
+        run: |
+          if [ -f site/data/battles.json ]; then echo "ok=true" >> "$GITHUB_OUTPUT"; else
+            echo "::warning::No site/data yet. Run the 'Update rankings' workflow once to scrape Wikipedia."; fi
+
+      - uses: actions/configure-pages@v5
+        if: steps.check.outputs.ok == 'true'
+      - uses: actions/upload-pages-artifact@v3
+        if: steps.check.outputs.ok == 'true'
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    if: needs.build.outputs.publish == 'true'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

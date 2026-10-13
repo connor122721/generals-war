@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Generals Ranked</title>
+<meta name="description" content="Every commander on Wikipedia ranked by wins above replacement: how many more battles they won than an average general would have with the same forces.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="masthead">
+  <div class="wrap">
+    <h1>Generals ranked by wins above replacement</h1>
+    <p class="lede">Each battle on Wikipedia gives a commander credit for how much better they did than an average general would have with the same troops. <span class="blue-ink">Blue</span> means they won more than the odds said; <span class="red-ink">red</span> means they won less.</p>
+    <p class="stamp" id="stamp">Loading battles…</p>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="timeline" aria-label="Choose a period">
+    <div class="eras" id="eras" role="group" aria-label="Era"></div>
+    <svg id="hist" class="hist" viewBox="0 0 600 64" preserveAspectRatio="none" role="img" aria-label="Number of battles over time"></svg>
+    <form class="custom" id="custom">
+      <label>From <input type="number" id="from" placeholder="-500" inputmode="numeric"></label>
+      <label>to <input type="number" id="to" placeholder="2026" inputmode="numeric"></label>
+      <button type="submit">Set years</button>
+      <button type="button" id="all-eras" class="ghost">All eras</button>
+      <span class="hint">Use negative numbers for BC.</span>
+    </form>
+  </section>
+
+  <section class="controls" aria-label="Filters">
+    <label class="search"><span class="sr">Find a general</span>
+      <input type="search" id="q" placeholder="Find a general…" autocomplete="off">
+    </label>
+    <label>Sort
+      <select id="sort">
+        <option value="war">Total WAR</option>
+        <option value="avg">WAR per battle</option>
+        <option value="n">Most battles</option>
+        <option value="worst">Lowest WAR</option>
+      </select>
+    </label>
+    <label>Min. battles
+      <select id="min">
+        <option>1</option><option selected>2</option><option>3</option><option>5</option><option>10</option>
+      </select>
+    </label>
+    <label>Credit
+      <select id="credit">
+        <option value="full">Full credit each</option>
+        <option value="shared">Split among co-commanders</option>
+      </select>
+    </label>
+    <fieldset class="kinds" id="kinds"><legend class="sr">Engagement types</legend></fieldset>
+  </section>
+
+  <div class="layout">
+    <section class="board" aria-label="Rankings">
+      <div class="board-head">
+        <span>Commander</span><span class="rec">Record</span><span class="score">WAR</span>
+      </div>
+      <ol id="list" class="list"></ol>
+      <button id="more" class="more" hidden>Show 50 more</button>
+      <p id="empty" class="empty" hidden>No commanders match. Try a wider period, fewer minimum battles, or a different name.</p>
+    </section>
+
+    <aside id="detail" class="detail" aria-live="polite">
+      <p class="placeholder">Pick a commander to see each battle, who they faced, and how their score built up.</p>
+    </aside>
+  </div>
+
+  <details class="method" id="method">
+    <summary>How the score works</summary>
+    <div id="method-body"></div>
+  </details>
+</main>
+
+<footer class="wrap foot">
+  <p>Data from English Wikipedia battle infoboxes (CC BY-SA). Inspired by Ethan Arsht's <a href="https://ethanarsht.github.io/military_rankings/">military rankings</a>. Wikipedia lists are incomplete and infoboxes disagree with each other, so treat this as a fun thought experiment, not a verdict.</p>
+</footer>
+<script src="app.js"></script>
+</body>
+</html>
