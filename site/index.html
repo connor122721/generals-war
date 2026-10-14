@@ -59,13 +59,29 @@
   </section>
 
   <div class="layout">
-    <section class="board" aria-label="Rankings">
+    <section class="board" aria-label="Commanders">
+      <div class="views" id="views" role="tablist" aria-label="View">
+        <button type="button" role="tab" data-v="rank" aria-selected="true">Rankings</button>
+        <button type="button" role="tab" data-v="scatter" aria-selected="false">Scatterplot</button>
+      </div>
+      <div id="rank-view">
       <div class="board-head">
         <span>Commander</span><span class="rec">Record</span><span class="score">WAR</span>
       </div>
       <ol id="list" class="list"></ol>
       <button id="more" class="more" hidden>Show 50 more</button>
       <p id="empty" class="empty" hidden>No commanders match. Try a wider period, fewer minimum battles, or a different name.</p>
+      </div>
+      <div id="scatter-view" hidden>
+        <div class="presets" id="presets" role="group" aria-label="Preset comparisons"></div>
+        <div class="axes">
+          <label>Across <select id="ax-x"></select></label>
+          <button type="button" id="swap" class="swap" aria-label="Swap axes">⇄</button>
+          <label>Up <select id="ax-y"></select></label>
+        </div>
+        <div id="plot"></div>
+        <p class="cap">Hover a dot for details, click it to open that commander, drag a box to zoom, double-click to zoom out. The period, battle types, minimum battles, credit and search filters above all apply.</p>
+      </div>
     </section>
 
     <aside id="detail" class="detail" aria-live="polite">
@@ -82,6 +98,7 @@
 <footer class="wrap foot">
   <p>Data from English Wikipedia battle infoboxes (CC BY-SA). Inspired by Ethan Arsht's <a href="https://ethanarsht.github.io/military_rankings/">military rankings</a>. Wikipedia lists are incomplete and infoboxes disagree with each other, so treat this as a fun thought experiment, not a verdict.</p>
 </footer>
+<script src="scatter.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

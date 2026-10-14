@@ -7,6 +7,7 @@ It is a from-scratch, automated take on Ethan Arsht's [military rankings](https:
 - **No hand labelling.** Winners, troop strengths and dates are parsed from the infobox wikitext, so the whole thing can be re-run on a schedule.
 - **Far more battles.** Instead of the "List of battles" pages, it reads every article that uses `{{Infobox military conflict}}`.
 - **Historic and modern views.** The browser recomputes WAR for any period (ancient, medieval, early modern, 19th century, world wars, since 1945, or custom years) and engagement type.
+- **Interactive scatterplots.** Plot any two of: battles fought, total WAR, WAR per battle, win rate, the average general's win chance, career midpoint, typical army size and force ratio. Hover for details, click a dot to open that commander, drag to zoom. Each commander's page also has an "odds faced" scatter of every battle they fought.
 
 Live site after setup: `https://<your-user>.github.io/<repo-name>/`
 
@@ -22,7 +23,16 @@ Live site after setup: `https://<your-user>.github.io/<repo-name>/`
 2. In the repo, open **Settings → Pages** and set **Source** to **GitHub Actions**.
 3. Open **Actions → Update rankings → Run workflow**. Leave *limit* blank for the full scrape, or enter `300` for a two-minute test run first.
 
-When the run finishes, it commits the data and publishes the site. After that it re-runs every Monday and only re-downloads pages that changed since the last run. You can also trigger it by hand at any time.
+When the run finishes, it commits the data and publishes the site. The very first push also starts a scrape on its own.
+
+## Keeping the data up to date
+
+- **Automatically:** the workflow re-scrapes every Monday. It only re-downloads articles whose Wikipedia revision changed since the last run, so weekly runs take a few minutes.
+- **On demand:** Actions → Update rankings → Run workflow (this also works from the GitHub mobile app).
+- **After changing the scraper:** pushing a change under `scraper/` triggers a fresh scrape.
+- **Locally:** `python -m scraper.build` (see below).
+
+The page header shows when the data was last refreshed.
 
 ## Run it locally
 

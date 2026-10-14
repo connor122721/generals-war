@@ -17,8 +17,10 @@
   const PAGE = 50;
 
   const state = { era: "all", from: null, to: null, kinds: new Set([0, 1, 2, 3, 4]), min: 2,
-                  credit: "full", sort: "war", q: "", sel: null, shown: PAGE };
-  let B = [], G = [], META = {}, byGeneral = [], ranked = [], stats = new Map();
+                  credit: "full", sort: "war", q: "", sel: null, shown: PAGE,
+                  view: "rank", sx: "n", sy: "war", dchart: "career" };
+  let B = [], G = [], META = {}, byGeneral = [], ranked = [], eligible = [], stats = new Map();
+  let mainPlot = null;
 
   const $ = (id) => document.getElementById(id);
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -41,6 +43,7 @@
     $("stamp").innerHTML = (META.source && /preview/i.test(META.source) ? `<span class="preview">${esc(META.source)}.</span> ` : "")
       + `${META.battles.toLocaleString()} battles, ${META.generals.toLocaleString()} commanders. Updated ${esc(META.updated)}.`;
     update();
+    setView(state.view);
     if (state.sel != null) showDetail(state.sel, false);
   }).catch((e) => {
     $("stamp").textContent = `Couldn't load the rankings data (${e.message}). Run the scraper to create site/data, then reload.`;
@@ -65,8 +68,13 @@
         const w = (o - p) / (shared ? ids.length : 1);
         for (const id of ids) {
           let s = stats.get(id);
-          if (!s) stats.set(id, (s = { n: 0, w: 0, l: 0, d: 0, war: 0, first: b[1], last: b[1] }));
-          s.n++; s.war += w;
+          if (!s) stats.set(id, (s = { n: 0, w: 0, l: 0, d: 0, war: 0, first: b[1], last: b[1],
+                                       psum: 0, ysum: 0, yn: 0, lsz: 0, nsz: 0, lrat: 0, nrat: 0 }));
+          s.n++; s.war += w; s.psum += p;
+          const own = ids === b[7] ? b[5] : b[6], foe = ids === b[7] ? b[6] : b[5];
+          if (own) { s.lsz += Math.log(own); s.nsz++; }
+          if (own && foe) { s.lrat += Math.log(own / foe); s.nrat++; }
+          if (b[1] != null) { s.ysum += b[1]; s.yn++; }
           if (o === 1) s.w++; else if (o === 0) s.l++; else s.d++;
           if (b[1] != null) {
             if (s.first == null || b[1] < s.first) s.first = b[1];
@@ -80,6 +88,7 @@
     const key = { war: (s) => -s.war, worst: (s) => s.war, avg: (s) => -s.war / s.n, n: (s) => -s.n - s.war / 1000 }[state.sort];
     ids.sort((a, b) => key(stats.get(a)) - key(stats.get(b)));
     ranked = ids.map((id, i) => ({ id, rank: i + 1 }));
+    eligible = ranked;
     if (q) ranked = ranked.filter((r) => G[r.id][0].toLowerCase().includes(q));
   }
 
@@ -89,6 +98,7 @@
     compute();
     renderList();
     renderHist();
+    if (state.view === "scatter") renderScatter();
     writeHash();
     if (state.sel != null) showDetail(state.sel, false);
   }
@@ -115,6 +125,86 @@
     $("more").hidden = ranked.length <= state.shown;
     $("more").textContent = `Show ${Math.min(PAGE, ranked.length - state.shown)} more of ${(ranked.length - state.shown).toLocaleString()}`;
     $("empty").hidden = ranked.length > 0;
+  }
+
+
+  // ------------------------------------------------------------- scatter
+  const pct = (v) => Math.round(v * 100) + "%";
+  const AXES = {
+    n: { label: "Battles fought", log: true, get: (s) => s.n, fmt: (v) => String(Math.round(v)) },
+    war: { label: "Total WAR", get: (s) => s.war, fmt: (v) => signed(v, Math.abs(v) < 10 ? 1 : 0), ref: 0 },
+    avg: { label: "WAR per battle", get: (s) => s.war / s.n, fmt: (v) => signed(v, 2), ref: 0 },
+    win: { label: "Win rate (draws count half)", get: (s) => (s.w + s.d / 2) / s.n, fmt: pct, ref: 0.5 },
+    odds: { label: "Average general's win chance", get: (s) => s.psum / s.n, fmt: pct, ref: 0.5 },
+    year: { label: "Career midpoint (year)", get: (s) => (s.yn ? s.ysum / s.yn : NaN), fmt: (v) => year(Math.round(v)) },
+    size: { label: "Typical army size", log: true, get: (s) => (s.nsz ? Math.exp(s.lsz / s.nsz) : NaN), fmt: fmtN },
+    ratio: { label: "Typical force ratio (own ÷ enemy)", log: true, get: (s) => (s.nrat ? Math.exp(s.lrat / s.nrat) : NaN),
+             fmt: (v) => (v >= 1 ? (v < 10 ? v.toFixed(1) : Math.round(v)) + "×" : "1:" + (1 / v < 10 ? (1 / v).toFixed(1) : Math.round(1 / v))), ref: 1 },
+  };
+  const PRESETS = [
+    { id: "exp", label: "Score vs experience", x: "n", y: "war" },
+    { id: "odds", label: "Beating the odds", x: "odds", y: "win" },
+    { id: "hist", label: "Across history", x: "year", y: "war" },
+    { id: "size", label: "Outnumbered or not", x: "ratio", y: "avg" },
+  ];
+
+  function renderScatter() {
+    if (!mainPlot) {
+      mainPlot = new window.Scatter($("plot"), {
+        tooltip: (p) => generalTip(p.id),
+        onClick: (p) => { showDetail(p.id); renderScatter(); },
+      });
+    }
+    const ax = AXES[state.sx], ay = AXES[state.sy];
+    const q = state.q.trim().toLowerCase();
+    const pts = [];
+    for (const { id } of eligible) {
+      const s = stats.get(id);
+      const x = ax.get(s), y = ay.get(s);
+      const match = !q || G[id][0].toLowerCase().includes(q);
+      // spread whole-number battle counts a little so stacked dots stay visible
+      const jit = (k) => (k === "n" ? 1 + (((id * 2654435761) % 1000) / 1000 - 0.5) * 0.12 : 1);
+      pts.push({ id, x: x * jit(state.sx), y: y * jit(state.sy), cls: s.war > 0.0001 ? "pos" : s.war < -0.0001 ? "neg" : "draw", dim: !match,
+                 ring: id === state.sel, name: G[id][0] });
+    }
+    const missing = pts.filter((p) => !Number.isFinite(p.x) || !Number.isFinite(p.y)).length;
+    // Direct-label a handful of standouts: highest and lowest on the y axis, plus search hits.
+    const ok = pts.filter((p) => Number.isFinite(p.x) && Number.isFinite(p.y) && !p.dim);
+    const byY = ok.slice().sort((a, b) => b.y - a.y);
+    const lab = new Set([...byY.slice(0, 6), ...byY.slice(-2)]);
+    if (q && ok.length <= 8) ok.forEach((p) => lab.add(p));
+    lab.forEach((p) => { p.label = true; });
+    pts.forEach((p) => { if (!p.label && !p.ring) p.name = ""; });
+    mainPlot.set(pts, {
+      xLabel: ax.label, yLabel: ay.label, xLog: ax.log, yLog: ay.log, xFmt: ax.fmt, yFmt: ay.fmt, yRef: ay.ref,
+      diag: (state.sx === "odds" && state.sy === "win") || (state.sx === "win" && state.sy === "odds"),
+      keepView: true,
+      legend: [{ cls: "pos", label: "Positive WAR" }, { cls: "neg", label: "Negative WAR" }],
+      note: `${ok.length.toLocaleString()} commanders with ${state.min}+ battles${missing ? `; ${missing.toLocaleString()} without troop numbers not shown` : ""}. ${matchMedia("(hover: hover)").matches ? " Drag to zoom." : " Tap a dot to open it."}`,
+    });
+    document.querySelectorAll("#presets button").forEach((b) => {
+      const p = PRESETS.find((x) => x.id === b.dataset.p);
+      b.setAttribute("aria-pressed", String(p.x === state.sx && p.y === state.sy));
+    });
+  }
+
+  function generalTip(id) {
+    const s = stats.get(id), g = G[id];
+    if (!s) return esc(g[0]);
+    const span = s.first == null ? "" : s.first === s.last ? year(s.first) : `${year(s.first)}–${year(s.last)}`;
+    const extra = [state.sx, state.sy].filter((k) => !["war", "n"].includes(k))
+      .map((k) => { const v = AXES[k].get(s); return Number.isFinite(v) ? `<span>${AXES[k].label}: <b>${AXES[k].fmt(v)}</b></span>` : ""; }).join("");
+    return `<strong>${esc(g[0])}</strong><span>${esc(span)}</span>
+      <span>WAR <b>${signed(s.war)}</b> over ${s.n} battle${s.n > 1 ? "s" : ""} (${s.w}–${s.l}${s.d ? "–" + s.d : ""})</span>${extra}`;
+  }
+
+  function setView(v) {
+    state.view = v;
+    document.querySelectorAll("#views button").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.v === v)));
+    $("rank-view").hidden = v !== "rank";
+    $("scatter-view").hidden = v !== "scatter";
+    if (v === "scatter") renderScatter();
+    writeHash();
   }
 
   function xOf(y) {
@@ -152,7 +242,7 @@
     const all = byGeneral[id].slice().sort((a, b) => (B[a][1] ?? 1e9) - (B[b][1] ?? 1e9));
     const shared = state.credit === "shared";
     let cum = 0, w = 0, l = 0, d = 0, n = 0;
-    const pts = [];
+    const pts = [], odds = [];
     const items = all.map((i) => {
       const b = B[i];
       const side = b[7].includes(id) ? 0 : 1;
@@ -164,13 +254,15 @@
         cum += v; n++;
         if (o === 1) w++; else if (o === 0) l++; else d++;
         pts.push({ v: cum, o });
+        if (b[1] != null) odds.push({ id: i, x: b[1], y: p, cls: o === 1 ? "pos" : o === 0 ? "neg" : "draw",
+                                       shape: o === 0.5 ? "ring" : "dot", v, theirs, name: "" });
       }
       const res = o === 1 ? "W" : o === 0 ? "L" : "D";
       const vs = theirs.length ? "vs " + theirs.slice(0, 4).map((t) => `<button data-id="${t}">${esc(G[t][0])}</button>`).join(", ") + (theirs.length > 4 ? ` +${theirs.length - 4}` : "") : "";
-      const odds = b[5] && b[6] ? `${fmtN(side ? b[6] : b[5])} vs ${fmtN(side ? b[5] : b[6])} troops · ` : "";
+      const troops = b[5] && b[6] ? `${fmtN(side ? b[6] : b[5])} vs ${fmtN(side ? b[5] : b[6])} troops · ` : "";
       return `<li class="${ok ? "" : "out"}"><span class="by">${year(b[1])}</span>
         <span class="bt"><span class="tag ${res}">${res}</span><a href="${wiki(b[0])}" target="_blank" rel="noopener">${esc(b[0])}</a>
-          <span class="vs">${vs}</span><span class="odds">${odds}average general wins ${Math.round(p * 100)}%</span></span>
+          <span class="vs">${vs}</span><span class="odds">${troops}average general wins ${Math.round(p * 100)}%</span></span>
         <span class="bw ${v >= 0 ? "pos" : "neg"}">${signed(v)}</span></li>`;
     });
     const thumb = g[2] ? `<img class="portrait" src="${g[2].startsWith("http") ? esc(g[2]) : THUMB + esc(g[2])}" alt="">`
@@ -181,9 +273,25 @@
         <p><a href="${wiki(g[0])}" target="_blank" rel="noopener">Wikipedia article</a></p></div></div>
       <div class="stats"><div><b>${signed(cum)}</b><span>WAR</span></div><div><b>${n ? signed(cum / n) : "–"}</b><span>per battle</span></div>
         <div><b>${w}–${l}${d ? "–" + d : ""}</b><span>won–lost${d ? "–drawn" : ""}</span></div><div><b>${n}</b><span>battles</span></div></div>
-      ${career(pts)}
-      <p class="cap">Running total of WAR, one point per battle in the selected period${outside ? `; ${outside} battle${outside > 1 ? "s" : ""} outside it are dimmed below` : ""}.</p>
+      <div class="dtabs" role="tablist" aria-label="Career chart">
+        <button type="button" role="tab" data-c="career" aria-selected="${state.dchart === "career"}">Running total</button>
+        <button type="button" role="tab" data-c="odds" aria-selected="${state.dchart === "odds"}">Odds faced</button></div>
+      ${state.dchart === "career" ? career(pts) : '<div id="dplot" class="dplot"></div>'}
+      <p class="cap">${state.dchart === "career" ? "Running total of WAR, one point per battle in the selected period"
+        : "Each battle by year and the chance an average general would have won it. Wins low on the chart are upsets"}${outside ? `; ${outside} battle${outside > 1 ? "s" : ""} outside the period are dimmed below` : ""}.</p>
       <ol class="battles">${items.join("")}</ol>`;
+    if (state.dchart === "odds") {
+      const plot = new window.Scatter($("dplot"), {
+        tooltip: (p) => `<strong>${esc(B[p.id][0])}</strong><span>${year(B[p.id][1])} · ${p.cls === "pos" ? "won" : p.cls === "neg" ? "lost" : "drawn"}</span>
+          ${p.theirs.length ? `<span>vs ${p.theirs.slice(0, 3).map((t) => esc(G[t][0])).join(", ")}</span>` : ""}
+          <span>Average general wins ${pct(p.y)} · WAR <b>${signed(p.v)}</b></span>`,
+        onClick: (p) => window.open(wiki(B[p.id][0]), "_blank", "noopener"),
+      });
+      plot.set(odds, { xLabel: "Year", yLabel: "Avg. general's chance", xFmt: (v) => year(Math.round(v)),
+        yFmt: pct, yRef: 0.5, yMin: 0.45, yMax: 0.55, height: 230, empty: "No dated battles in this period.",
+        legend: [{ cls: "pos", label: "Won" }, { cls: "neg", label: "Lost" }, { cls: "draw", label: "Drawn", shape: "ring" }],
+      });
+    }
     document.querySelectorAll(".row").forEach((r) => r.toggleAttribute("aria-current", +r.dataset.id === id));
     writeHash();
     if (scroll && window.matchMedia("(max-width: 860px)").matches) el.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -258,8 +366,25 @@
       $(elId).value = String(state[key]);
       $(elId).addEventListener("change", (ev) => { state[key] = num ? +ev.target.value : ev.target.value; update(); });
     }
+    $("views").addEventListener("click", (ev) => { const b = ev.target.closest("button"); if (b) setView(b.dataset.v); });
+    const axOpts = Object.entries(AXES).map(([k, a]) => `<option value="${k}">${a.label}</option>`).join("");
+    for (const [elId, key] of [["ax-x", "sx"], ["ax-y", "sy"]]) {
+      $(elId).innerHTML = axOpts; $(elId).value = state[key];
+      $(elId).addEventListener("change", (ev) => { state[key] = ev.target.value; renderScatter(); });
+    }
+    $("presets").innerHTML = PRESETS.map((p) => `<button type="button" data-p="${p.id}">${p.label}</button>`).join("");
+    $("presets").addEventListener("click", (ev) => {
+      const b = ev.target.closest("button"); if (!b) return;
+      const p = PRESETS.find((x) => x.id === b.dataset.p);
+      state.sx = p.x; state.sy = p.y; $("ax-x").value = p.x; $("ax-y").value = p.y; renderScatter();
+    });
+    $("swap").addEventListener("click", () => {
+      [state.sx, state.sy] = [state.sy, state.sx]; $("ax-x").value = state.sx; $("ax-y").value = state.sy; renderScatter();
+    });
     $("list").addEventListener("click", (ev) => { const b = ev.target.closest(".row"); if (b) showDetail(+b.dataset.id); });
     $("detail").addEventListener("click", (ev) => {
+      const tab = ev.target.closest(".dtabs button");
+      if (tab) { state.dchart = tab.dataset.c; showDetail(state.sel, false); return; }
       if (ev.target.id === "back") { const cur = document.querySelector('.row[aria-current="true"]') || $("list"); cur.scrollIntoView({ block: "center" }); return; }
       const b = ev.target.closest("button[data-id]"); if (b) showDetail(+b.dataset.id); });
     $("more").addEventListener("click", () => { state.shown += PAGE; renderList(); });
@@ -275,6 +400,7 @@
     if (state.sel != null) p.set("g", G[state.sel][0]);
     if (state.credit !== "full") p.set("credit", state.credit);
     if (state.sort !== "war") p.set("sort", state.sort);
+    if (state.view === "scatter") p.set("view", `${state.sx}-${state.sy}`);
     const h = p.toString();
     try { history.replaceState(null, "", h ? "#" + h : location.pathname + location.search); } catch (e) { /* sandboxed preview */ }
   }
@@ -292,6 +418,8 @@
     }
     if (p.get("credit") === "shared") state.credit = "shared";
     if (["avg", "n", "worst"].includes(p.get("sort"))) state.sort = p.get("sort");
+    const v = p.get("view");
+    if (v) { const [x, y] = v.split("-"); if (AXES[x] && AXES[y]) { state.view = "scatter"; state.sx = x; state.sy = y; } }
     const g = p.get("g");
     if (g) { const i = G.findIndex((r) => r[0] === g); if (i >= 0) state.sel = i; }
   }
