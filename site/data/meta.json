@@ -1,0 +1,99 @@
+{
+ "updated": "2026-10-14 14:23 UTC",
+ "source": "English Wikipedia battle infoboxes",
+ "battles": 12934,
+ "generals": 19217,
+ "with_strengths": 6627,
+ "model": {
+  "b": 0.1219,
+  "se": 0.0184,
+  "n": 6627,
+  "calibration": [
+   {
+    "ratio": "1–1.25×",
+    "n": 1244,
+    "observed": 0.505,
+    "model": 0.503
+   },
+   {
+    "ratio": "1.25–1.5×",
+    "n": 751,
+    "observed": 0.539,
+    "model": 0.51
+   },
+   {
+    "ratio": "1.5–2×",
+    "n": 1045,
+    "observed": 0.549,
+    "model": 0.517
+   },
+   {
+    "ratio": "2–3×",
+    "n": 1218,
+    "observed": 0.513,
+    "model": 0.527
+   },
+   {
+    "ratio": "3–5×",
+    "n": 1008,
+    "observed": 0.54,
+    "model": 0.541
+   },
+   {
+    "ratio": "5–20×",
+    "n": 1539,
+    "observed": 0.573,
+    "model": 0.57
+   }
+  ]
+ },
+ "kinds": [
+  "battle",
+  "siege",
+  "naval",
+  "operation",
+  "campaign"
+ ],
+ "top": [
+  {
+   "name": "Napoleon",
+   "war": 27.94
+  },
+  {
+   "name": "Arthur Wellesley, 1st Duke of Wellington",
+   "war": 16.44
+  },
+  {
+   "name": "Khalid ibn al-Walid",
+   "war": 15.88
+  },
+  {
+   "name": "Karl Dönitz",
+   "war": 14.95
+  },
+  {
+   "name": "Douglas Haig, 1st Earl Haig",
+   "war": 14.68
+  },
+  {
+   "name": "Bernard Montgomery",
+   "war": 14.15
+  },
+  {
+   "name": "André Masséna",
+   "war": 12.98
+  },
+  {
+   "name": "Mehmed II",
+   "war": 12.47
+  },
+  {
+   "name": "Edmund Allenby, 1st Viscount Allenby",
+   "war": 12.38
+  },
+  {
+   "name": "Jean Lannes",
+   "war": 11.9
+  }
+ ]
+}
