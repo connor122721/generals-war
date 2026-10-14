@@ -9,21 +9,7 @@ It is a from-scratch, automated take on Ethan Arsht's [military rankings](https:
 - **Historic and modern views.** The browser recomputes WAR for any period (ancient, medieval, early modern, 19th century, world wars, since 1945, or custom years) and engagement type.
 - **Interactive scatterplots.** Plot any two of: battles fought, total WAR, WAR per battle, win rate, the average general's win chance, career midpoint, typical army size and force ratio. Hover for details, click a dot to open that commander, drag to zoom. Each commander's page also has an "odds faced" scatter of every battle they fought.
 
-Live site after setup: `https://<your-user>.github.io/<repo-name>/`
-
-## Set up (about 5 minutes, then ~1 hour for the first scrape)
-
-1. Create an empty GitHub repository, e.g. `generals-war`, and push this folder to it:
-   ```bash
-   cd generals-war
-   git init -b main && git add . && git commit -m "Initial commit"
-   git remote add origin https://github.com/<your-user>/generals-war.git
-   git push -u origin main
-   ```
-2. In the repo, open **Settings → Pages** and set **Source** to **GitHub Actions**.
-3. Open **Actions → Update rankings → Run workflow**. Leave *limit* blank for the full scrape, or enter `300` for a two-minute test run first.
-
-When the run finishes, it commits the data and publishes the site. The very first push also starts a scrape on its own.
+Live site here: https://connor122721.github.io/generals-war/
 
 ## Keeping the data up to date
 
@@ -95,7 +81,7 @@ On the reference project's 2017 data this model reproduces its headline numbers 
 
 ## Caveats
 
-Wikipedia coverage is uneven (Western and modern battles are over-represented), infobox numbers are often contested, and this measures battlefield results only, not strategy, logistics or politics. Treat it as a fun thought experiment, not a verdict.
+Wikipedia coverage is uneven (Western and modern battles are over-represented), infobox numbers are often contested, and this measures battlefield results only, not strategy, logistics or politics. Treat this as a nerdy thought experiment please.
 
 ## Credits and licence
 
