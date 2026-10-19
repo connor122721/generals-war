@@ -1,48 +1,48 @@
 {
- "updated": "2026-10-14 14:23 UTC",
+ "updated": "2026-10-19 13:06 UTC",
  "source": "English Wikipedia battle infoboxes",
- "battles": 12934,
- "generals": 19217,
- "with_strengths": 6627,
+ "battles": 12944,
+ "generals": 19223,
+ "with_strengths": 6633,
  "model": {
-  "b": 0.1219,
+  "b": 0.1233,
   "se": 0.0184,
-  "n": 6627,
+  "n": 6633,
   "calibration": [
    {
     "ratio": "1–1.25×",
-    "n": 1244,
+    "n": 1250,
     "observed": 0.505,
     "model": 0.503
    },
    {
     "ratio": "1.25–1.5×",
-    "n": 751,
-    "observed": 0.539,
+    "n": 752,
+    "observed": 0.538,
     "model": 0.51
    },
    {
     "ratio": "1.5–2×",
-    "n": 1045,
-    "observed": 0.549,
+    "n": 1046,
+    "observed": 0.548,
     "model": 0.517
    },
    {
     "ratio": "2–3×",
-    "n": 1218,
-    "observed": 0.513,
-    "model": 0.527
+    "n": 1216,
+    "observed": 0.512,
+    "model": 0.528
    },
    {
     "ratio": "3–5×",
-    "n": 1008,
+    "n": 1005,
     "observed": 0.54,
-    "model": 0.541
+    "model": 0.542
    },
    {
     "ratio": "5–20×",
-    "n": 1539,
-    "observed": 0.573,
+    "n": 1542,
+    "observed": 0.574,
     "model": 0.57
    }
   ]
@@ -61,11 +61,11 @@
   },
   {
    "name": "Arthur Wellesley, 1st Duke of Wellington",
-   "war": 16.44
+   "war": 16.43
   },
   {
    "name": "Khalid ibn al-Walid",
-   "war": 15.88
+   "war": 15.83
   },
   {
    "name": "Karl Dönitz",
@@ -85,15 +85,15 @@
   },
   {
    "name": "Mehmed II",
-   "war": 12.47
+   "war": 12.55
   },
   {
    "name": "Edmund Allenby, 1st Viscount Allenby",
    "war": 12.38
   },
   {
-   "name": "Jean Lannes",
-   "war": 11.9
+   "name": "Suleiman the Magnificent",
+   "war": 12.0
   }
  ]
 }
