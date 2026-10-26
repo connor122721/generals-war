@@ -1,49 +1,49 @@
 {
- "updated": "2026-10-19 13:06 UTC",
+ "updated": "2026-10-26 12:55 UTC",
  "source": "English Wikipedia battle infoboxes",
- "battles": 12944,
- "generals": 19223,
- "with_strengths": 6633,
+ "battles": 12961,
+ "generals": 19231,
+ "with_strengths": 6642,
  "model": {
-  "b": 0.1233,
+  "b": 0.1237,
   "se": 0.0184,
-  "n": 6633,
+  "n": 6642,
   "calibration": [
    {
     "ratio": "1–1.25×",
     "n": 1250,
-    "observed": 0.505,
+    "observed": 0.504,
     "model": 0.503
    },
    {
     "ratio": "1.25–1.5×",
-    "n": 752,
-    "observed": 0.538,
+    "n": 751,
+    "observed": 0.539,
     "model": 0.51
    },
    {
     "ratio": "1.5–2×",
-    "n": 1046,
-    "observed": 0.548,
+    "n": 1050,
+    "observed": 0.55,
     "model": 0.517
    },
    {
     "ratio": "2–3×",
-    "n": 1216,
+    "n": 1214,
     "observed": 0.512,
     "model": 0.528
    },
    {
     "ratio": "3–5×",
-    "n": 1005,
-    "observed": 0.54,
+    "n": 1010,
+    "observed": 0.541,
     "model": 0.542
    },
    {
     "ratio": "5–20×",
-    "n": 1542,
+    "n": 1545,
     "observed": 0.574,
-    "model": 0.57
+    "model": 0.571
    }
   ]
  },
@@ -85,7 +85,7 @@
   },
   {
    "name": "Mehmed II",
-   "war": 12.55
+   "war": 12.56
   },
   {
    "name": "Edmund Allenby, 1st Viscount Allenby",
